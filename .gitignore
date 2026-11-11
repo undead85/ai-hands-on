@@ -1,0 +1,37 @@
+# Secretos
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Artefactos locales
+.cache/
+.chroma/
+chroma_db/
+*.npy
+
+# Métricas de ejecución: solo se versionan muestras explícitas
+runs/*
+!runs/.gitkeep
+!runs/muestra_*.jsonl
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

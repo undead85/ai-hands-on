@@ -1,0 +1,7 @@
+# Sin versiones fijadas a propósito: tras el D1 corre `pip freeze > requirements.lock`
+# y deja aquí las versiones que funcionaron.
+openai  # cliente compatible con Groq/Ollama/otros (solo cambia base_url)
+python-dotenv
+pydantic
+numpy
+pytest

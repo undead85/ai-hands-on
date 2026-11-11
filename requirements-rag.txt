@@ -1,0 +1,4 @@
+# Se instala en el D3 (pesado: sentence-transformers trae torch).
+# Antes de instalarlo, cierra apps pesadas y revisa la RAM libre.
+sentence-transformers
+chromadb
