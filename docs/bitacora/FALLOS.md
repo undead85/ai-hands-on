@@ -6,6 +6,9 @@
 | F-02 | D1 | `latency_s` de llamadas con `attempts: 2` es ~0,5 s, pero la llamada duró ~2,1 s | `t_start` se toma dentro de `run_once`, así que solo mide el intento exitoso y deja fuera intentos fallidos y backoff | Propuesta (sin implementar): medir en el wrapper toda la llamada y registrar también el tiempo del intento exitoso | Abierto: una fila con `attempts > 1` debe tener tiempo total ≥ latencia del intento + espera mínima |
 | F-03 | D1 | Con timeout de 1 ms el error registrado es `Connection error.` | No concluyente: el SDK distingue timeouts de otros fallos de conexión y aquí no se registró la causa | Abierto: inspeccionar `exc.__cause__` y registrar la clase de la causa | Abierto: el test de timeout debe fallar si la causa no es un timeout |
 | F-04 | D1 | El ítem "anómalas marcadas" del resumen siempre pasa | Está fijado en verdadero en el reporte | Abierto: derivarlo de los datos (anomalías detectadas vs. marcadas al escribir) | Abierto: un registro de prueba con `finish_reason='length'` debe hacerlo fallar |
+| F-05 | D2 | Con un texto sin acciones, `json_schema` (strict falso y verdadero) devuelve `action_items: [""]` y valida; `json_object` devuelve `[]` y falla | Hipótesis: el esquema exige lista no vacía pero el elemento `str` acepta `""` | Parcial: strings no vacíos con espacios recortados en `Incident`; falta repetir la prueba de modos | 4 casos nuevos en `d02_validate_json.py` (rojo con el modelo anterior, verde con el actual) |
+| F-06 | D2 | `pm-10` (documento corto) terminó como `truncated` con `max_tokens=400`; repetido con 1000 validó con 54 tokens | No determinada: el 400 "Failed to generate JSON" agrupa un corte por tamaño real (`pm-18` con 50) y un caso que no depende del tamaño | Abierto: distinguir las causas sin depender solo del texto del error | Abierto |
+| F-07 | D2 | 8 de 23 llamadas necesitaron 2 a 4 peticiones de red; `total_s` hasta 9.234 s | No determinada: el registro no guarda la clase de error de los intentos fallidos; `Retry-After` se ignora | Abierto: registrar clase y estado de cada intento fallido; respetar `Retry-After` | Abierto |
 
 ## Detalle
 
@@ -35,4 +38,22 @@
 ### F-04 · Verificación que no puede fallar (abierto)
 - **Síntoma:** en el resumen del reporte, el ítem "5 anómalas marcadas" está fijado en `True`.
 - **Causa raíz:** la anomalía solo se detecta al leer el `jsonl`; al escribir el registro no se marca, así que no hay nada contra qué comparar.
+- **Estado:** abierto.
+
+### F-05 · Strings vacíos que cumplen una restricción de lista (parcialmente resuelto)
+- **Fecha / contexto:** 2026-11-12, prueba de modos de salida de D2 (`scripts/d02_probe.py`).
+- **Síntoma:** ante un texto que dice que no hubo acciones, `json_object` devolvió `"action_items": []` y falló con `too_short`; ambos modos `json_schema` devolvieron `"action_items": [""]` y pasaron la validación.
+- **Causa raíz:** hipótesis sin probar. La restricción exige al menos un elemento y el elemento no tiene restricción, así que `""` la cumple.
+- **Impacto:** una respuesta aparentemente válida con una acción inventada y vacía; un reintento basado en el error de validación no se activaría.
+- **Segunda prueba:** tras prohibir strings vacíos, los modos con esquema devolvieron `["/"]` y siguieron validando. Una restricción de longitud no impide una acción sin contenido; la decisión de exigir al menos una acción queda abierta.
+- **Estado:** parcialmente resuelto. La capa Pydantic quedó cerrada y con test; falta repetir la prueba de modos para ver qué hace el modelo cuando el esquema ya no admite un string vacío. Detalle en `docs/bitacora/d02-structured-outputs.md`.
+
+### F-06 · La etiqueta `truncated` agrupa causas distintas (abierto)
+- **Síntoma:** `pm-10`, el documento más corto, terminó como `truncated` con `max_tokens=400` (0 tokens registrados, 2,47 s). Repetido solo con 1000, validó con 54 tokens.
+- **Causa raíz:** no determinada; la etiqueta sale de un 400 cuyo texto contiene "Failed to generate JSON", y el mismo error aparece también en un corte real por tamaño (`pm-18` con 50). Falta repetir `pm-10` varias veces con 400.
+- **Estado:** abierto. Detalle en `docs/bitacora/d02-structured-outputs.md`.
+
+### F-07 · Reintentos de red frecuentes y sin causa registrada (abierto)
+- **Síntoma:** 8 de 23 llamadas con reintentos de red (18 peticiones extra); `total_s` hasta 9.234 s frente a una mediana de 0.991 s. La mayoría de los intentos fallidos fueron rápidos, no timeouts.
+- **Causa raíz:** no determinada; hipótesis sin probar: límites de tasa (429). El registro no guarda la clase de error de los intentos fallidos y `Retry-After` se ignora.
 - **Estado:** abierto.
