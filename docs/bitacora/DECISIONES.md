@@ -25,3 +25,13 @@ Formato por decisión: contexto · opciones (pros/contras) · decisión · conse
   - C. Ambas capas. ❌ Los intentos se multiplican (hasta 3 × 5 por llamada) y las métricas se vuelven ininterpretables.
 - Decisión: B.
 - Consecuencias: cada registro lleva `attempts` y `error`. Quedan abiertos F-02 (medir la llamada completa) y las mejoras de tope de tiempo total y `Retry-After`. La política de timeouts de producción queda por decidir con una muestra mayor (propuesta: ~2 s).
+
+## ADR-004 · Structured outputs: `json_schema` estricto + Pydantic como barrera final
+- Fecha: 2026-11-16 · Estado: aceptada con evidencia limitada
+- Contexto: D2 extrae `Incident(service, severity, root_cause, action_items[])` de post-mortems con una API que no admite streaming con structured outputs.
+- Opciones:
+  - A. `json_object` + validar con Pydantic. ✅ Con un texto sin acciones devolvió `[]` y falló de forma visible. ❌ No restringe la forma en el proveedor.
+  - B. `json_schema` con `strict: false`. ✅ Restringe la forma. ❌ Con el mismo texto devolvió `[""]` y luego `["/"]`, y validó.
+  - C. `json_schema` con `strict: true` + Pydantic estricto. ✅ Forma garantizada y segunda barrera. ❌ Igual que B ante un campo obligatorio sin contenido; no se compararon A, B y C sobre el mismo corpus.
+- Decisión: C. Reparación: un reintento con el error de validación (campo y mensaje, sin valores) y la respuesta previa; los reintentos de validación (máx. 2 intentos) se cuentan aparte de los de red (máx. 5). Un truncado es un fallo controlado y no se reintenta.
+- Consecuencias: 19/20 limpios válidos, sin margen. La reparación se ejercitó con un solo caso real (`rep-01`). Pendientes: comparar los tres modos sobre las 23 muestras, decidir si `action_items` puede estar vacía (F-05) y distinguir las causas del 400 "Failed to generate JSON" (F-06).

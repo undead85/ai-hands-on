@@ -43,7 +43,7 @@ docs/bitacora/   una entrada por día + FALLOS.md + DECISIONES.md
 | Día | Tema | Estado |
 |---|---|---|
 | D1 | Inferencia bajo el capó | ✅ (con deuda: F-02 a F-04) |
-| D2 | Structured outputs | 🟡 en curso |
+| D2 | Structured outputs | ✅ (con deuda: F-05 parcial, F-06, F-07) |
 | D3 | Chunking, embeddings y cosine pura | ⬜ |
 | D4 | ChromaDB y ablación de chunking | ⬜ |
 | D5 | RAG end-to-end | ⬜ |
